@@ -1,0 +1,6 @@
+discord.py
+python-dotenv
+chat-exporter
+motor==3.3.2
+pymongo==4.5.0
+pytz
