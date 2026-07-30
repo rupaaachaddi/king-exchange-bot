@@ -2574,7 +2574,7 @@ async def screenshot(ctx):
         "• Minimize both apps\n"
         "• Take one screenshot showing both minimized apps"
     )
-    embed.set_image(url="https://i.postimg.cc/nc1Y8nc4/splitss.jpg")
+    embed.set_image(url="")
     embed.set_footer(text=f"King Exchange & MM • Proof Verification System • Today at {datetime.now().strftime('%I:%M %p')}")
     await ctx.message.delete()
     content = client_member.mention if client_member else ""
