@@ -4,3 +4,5 @@ chat-exporter
 motor==3.6.0
 pymongo==4.9.2
 pytz
+discord.py==2.5.2
+
