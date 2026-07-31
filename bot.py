@@ -855,12 +855,15 @@ class ExchangeSelect(discord.ui.Select):
                          options=options, custom_id="exchange_select")
 
     async def callback(self, interaction: discord.Interaction):
-        print(
-            f"ExchangeSelect clicked | interaction={interaction.id} | done={interaction.response.is_done()}",
-            flush=True,
-        )
+        print(f"Selected value: {self.values[0]}", flush=True)
         modal_map = {"i2c": INRToCryptoModal, "c2i": CryptoToINRModal, "c2c": CryptoToCryptoModal}
-        await interaction.response.send_modal(modal_map[self.values[0]]())
+        modal = modal_map[self.values[0]]()
+
+        print(f"Created modal: {type(modal).__name__}", flush=True)
+
+        await interaction.response.send_modal(modal)
+
+        print("Modal sent successfully", flush=True)
 
 
 class PanelView(discord.ui.View):
