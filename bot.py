@@ -243,6 +243,18 @@ async def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None)
 
+import discord.http
+
+_original_request = discord.http.HTTPClient.request
+
+async def debug_request(self, route, *args, **kwargs):
+    if route.method == "PATCH":
+        print(f"PATCH -> {route.path}", flush=True)
+
+    return await _original_request(self, route, *args, **kwargs)
+
+discord.http.HTTPClient.request = debug_request
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  MODALS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -843,6 +855,10 @@ class ExchangeSelect(discord.ui.Select):
                          options=options, custom_id="exchange_select")
 
     async def callback(self, interaction: discord.Interaction):
+        print(
+            f"ExchangeSelect clicked | interaction={interaction.id} | done={interaction.response.is_done()}",
+            flush=True,
+        )
         modal_map = {"i2c": INRToCryptoModal, "c2i": CryptoToINRModal, "c2c": CryptoToCryptoModal}
         await interaction.response.send_modal(modal_map[self.values[0]]())
 
@@ -2862,6 +2878,7 @@ async def setup_hook():
 @bot.event
 async def on_ready():
     print("=== ON_READY STARTED ===", flush=True)
+    print(f"on_ready fired at {datetime.utcnow()}", flush=True)
 
     try:
         bot.add_view(PanelView())
