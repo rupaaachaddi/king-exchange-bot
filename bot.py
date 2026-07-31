@@ -10,6 +10,7 @@ from discord import interactions
 from discord import interactions
 from discord import app_commands
 from discord import interactions
+import datetime
 print("===== VERSION 24 JULY =====", flush=True)
 import discord
 from discord.ext import commands
@@ -855,14 +856,16 @@ class ExchangeSelect(discord.ui.Select):
                          options=options, custom_id="exchange_select")
 
     async def callback(self, interaction: discord.Interaction):
+        print("=" * 50, flush=True)
         print(f"Selected value: {self.values[0]}", flush=True)
+        print("Current UTC:", datetime.datetime.utcnow(), flush=True)
+        print("Interaction created:", interaction.created_at, flush=True)
         modal_map = {"i2c": INRToCryptoModal, "c2i": CryptoToINRModal, "c2c": CryptoToCryptoModal}
         modal = modal_map[self.values[0]]()
 
         print(f"Created modal: {type(modal).__name__}", flush=True)
 
         await interaction.response.send_modal(modal)
-
         print("Modal sent successfully", flush=True)
 
 
