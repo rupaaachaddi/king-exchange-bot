@@ -1588,7 +1588,7 @@ async def i2c_calc(ctx, amount: str = None):
     embed.add_field(name="Client Will Pay",    value=f"`₹{amt:.2f}`",   inline=False)
     embed.add_field(name="I2C Rate",           value=f"`₹{rate:.2f}/$`", inline=False)
     embed.add_field(name="Client Will Receive",value=f"`${result}`",    inline=False)
-    embed.set_footer(text=f"Live rates • {datetime.now().strftime('%I:%M:%S %p')}")
+    embed.set_footer(text=f"Live rates • {datetime.now(IST).strftime('%I:%M:%S %p')}")
     await ctx.send(embed=embed)
 
 
@@ -1629,7 +1629,7 @@ async def c2i_calc(ctx, amount: str = None):
     embed.add_field(name="Client Will Pay",    value=f"`${amt:.2f}`",    inline=False)
     embed.add_field(name="C2I Rate",           value=f"`₹{rate:.2f}/$ ({'≥$100' if amt >= 100 else '<$100'})`", inline=False)
     embed.add_field(name="Client Will Receive",value=f"`₹{result}`",    inline=False)
-    embed.set_footer(text=f"Live rates • {datetime.now().strftime('%I:%M:%S %p')}")
+    embed.set_footer(text=f"Live rates • {datetime.now(IST).strftime('%I:%M:%S %p')}")
     await ctx.send(embed=embed)
 
 @bot.command(name="editstats")
