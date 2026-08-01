@@ -86,6 +86,11 @@ async def get_all(col):
         k = doc.pop("_id")
         docs[k] = doc
     return docs
+async def safe_edit(channel, **kwargs):
+    try:
+        await asyncio.wait_for(channel.edit(**kwargs), timeout=10)
+    except (asyncio.TimeoutError, discord.HTTPException):
+        pass
 
 # ── Bot setup ─────────────────────────────────────────────────────────────────
 def clean_float(value):
@@ -800,10 +805,7 @@ async def perform_claim(channel, user, guild):
 
     type_emoji = {"i2c": "🎫", "c2i": "💵", "c2c": "🏦", "support_help": "📩", "support_report": "🚨"}
     emoji      = type_emoji.get(ticket["type"], "🎫")
-    try:
-        await channel.edit(name=f"{emoji}┃claimed-by-{user.name}")
-    except discord.HTTPException:
-        pass
+    await safe_edit(channel, name=f"{emoji}┃claimed-by-{user.name}")
 
     return True
 
@@ -1773,14 +1775,7 @@ async def vouch(ctx):
         vouch_cat = await ctx.guild.create_category(str(VOUCH_PENDING_CATEGORY))
     ticket["vouch_pending"] = True
     await set_doc(tickets_col, cid, ticket)
-    try:
-        await ctx.channel.edit(category=vouch_cat)
-    except Exception:
-        pass
-    try:
-        await ctx.channel.edit(name=f"💐┃vouch-{client_name}")
-    except discord.HTTPException:
-        pass
+    await safe_edit(ctx.channel, category=vouch_cat, name=f"💐┃vouch-{client_name}")
 
 @bot.command(name="mvouch", aliases=["vouchmanual"])
 @check_staff()
@@ -1862,14 +1857,7 @@ async def mvouch(ctx, client: str = None, amount: str = None,
             vouch_cat = await ctx.guild.create_category(str(VOUCH_PENDING_CATEGORY))
         ticket["vouch_pending"] = True
         await set_doc(tickets_col, cid, ticket)
-        try:
-            await ctx.channel.edit(category=vouch_cat)
-        except Exception:
-            pass
-        try:
-            await ctx.channel.edit(name=f"💐┃vouch-{client.name}")
-        except discord.HTTPException:
-            pass
+        await safe_edit(ctx.channel, category=vouch_cat, name=f"💐┃vouch-{client.name}")
 @bot.command(name="fixhistory")
 @check_owner()
 async def fixhistory(ctx, client: discord.Member, exchanger: discord.Member, ticket_number: int, trade_type: str, amount: str, *, asset: str):
@@ -1992,14 +1980,7 @@ async def mmvouch(ctx, client: str = None, amount: str = None, mm_type: str = No
         ticket["vouch_pending"] = True
         ticket["exchanger"]     = ticket.get("exchanger") or ctx.author.id
         await set_doc(tickets_col, cid, ticket)
-        try:
-            await ctx.channel.edit(category=vouch_cat)
-        except Exception:
-            pass
-        try:
-            await ctx.channel.edit(name=f"💐┃vouch-{client_name}")
-        except discord.HTTPException:
-            pass
+        await safe_edit(ctx.channel, category=vouch_cat, name=f"💐┃vouch-{client_name}")
 # ═══════════════════════════════════════════════════════════════════════════════
 #  COMMANDS — STATS & LEADERBOARD
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2400,14 +2381,9 @@ async def dn(ctx):
 
     done_cat = ctx.guild.get_channel(DONE_CATEGORY_ID)
     if done_cat:
-        try:
-            await ctx.channel.edit(category=done_cat)
-        except Exception:
-            pass
-    try:
-        await ctx.channel.edit(name=f"✅┃done-{ticket['ticket_number']}")
-    except discord.HTTPException:
-        pass
+        await safe_edit(ctx.channel, category=done_cat, name=f"✅┃done-{ticket['ticket_number']}")
+    else:
+        await safe_edit(ctx.channel, name=f"✅┃done-{ticket['ticket_number']}")
 
     await ctx.send(
         "✅ Transcript archived and sent. This ticket has been moved to review.\n"
@@ -2530,10 +2506,7 @@ async def unclaim(ctx):
         "support_report": f"🚨┃report-{ticket['ticket_number']}",
     }
     new_name = type_names.get(ticket["type"], ctx.channel.name)
-    try:
-        await ctx.channel.edit(name=new_name)
-    except discord.HTTPException:
-        pass  # Skip if rate limited
+    await safe_edit(ctx.channel, name=new_name)
 
     embed = discord.Embed(title="Ticket Unclaimed", color=0xED4245,
         description=f"<@{old_exchanger}> has unclaimed this ticket.\nAnother exchanger can now claim it.")
