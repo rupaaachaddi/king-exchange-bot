@@ -2179,7 +2179,6 @@ async def client_leaderboard(ctx):
     await ctx.send(embed=view.get_embed(), view=view)
 
 @bot.command(name="augtop")
-@check_staff()
 async def august_top_clients(ctx):
     all_c = await get_all(client_stats_col)
     start = IST.localize(datetime(2026, 8, 1, 0, 0, 0))
@@ -2653,7 +2652,7 @@ async def screenshot(ctx):
         "• Minimize both apps\n"
         "• Take one screenshot showing both minimized apps"
     )
-    embed.set_image(url="")
+    embed.set_image(url="https://i.postimg.cc/5y7NpM56/split-ss.webp")
     embed.set_footer(text=f"King Exchange & MM • Proof Verification System • Today at {datetime.now().strftime('%I:%M %p')}")
     await ctx.message.delete()
     content = client_member.mention if client_member else ""
