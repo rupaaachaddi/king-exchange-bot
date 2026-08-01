@@ -856,10 +856,6 @@ class ExchangeSelect(discord.ui.Select):
                          options=options, custom_id="exchange_select")
 
     async def callback(self, interaction: discord.Interaction):
-        print("=" * 50, flush=True)
-        print(f"Selected value: {self.values[0]}", flush=True)
-        print("Current UTC:", datetime.datetime.utcnow(), flush=True)
-        print("Interaction created:", interaction.created_at, flush=True)
         modal_map = {"i2c": INRToCryptoModal, "c2i": CryptoToINRModal, "c2c": CryptoToCryptoModal}
         modal = modal_map[self.values[0]]()
 
