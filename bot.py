@@ -1302,7 +1302,8 @@ async def upi(ctx, slot_or_user: str = None, user: discord.Member = None):
         if slot < 1 or slot > len(items):
             return await ctx.send(f"❌ {target.name} has {len(items)} UPI(s).")
         item = items[slot - 1]
-        await ctx.send(f"**{target.name}'s Address #{slot} ({item['label']}):**\n`{item['value']}`")
+        await ctx.send(f"**{target.name}'s Address #{slot} ({item['label']}):**")
+        await ctx.send(f"`{item['value']}`")
     else:
        lines = "\n".join([f"**{i+1}. {item['label']}** — `{item['value']}`" for i, item in enumerate(items)])
        await ctx.send(f"**{target.name}'s UPIs:**\n{lines}")
@@ -2848,9 +2849,11 @@ async def on_message(message):
                 await message.channel.send("❌ Staff only.")
                 return
             if matched_addy:
-                await message.channel.send(f"**{matched_addy[0]['label']} Address:**\n`{matched_addy[0]['value']}`")
+                await message.channel.send(f"**{matched_addy[0]['label']} Address:**")
+                await message.channel.send(f"`{matched_addy[0]['value']}`")
             elif matched_id:
-                await message.channel.send(f"**{matched_id[0]['label']} ID:**\n`{matched_id[0]['value']}`")
+                await message.channel.send(f"**{matched_id[0]['label']} ID:**")
+                await message.channel.send(f"`{matched_id[0]['value']}`")
             # Don't show all addresses if nothing matches — just silently ignore
 
 
