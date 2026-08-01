@@ -1763,6 +1763,7 @@ async def vouch(ctx):
         client_doc = {"deals": 0, "volume": 0.0}
     client_doc["deals"] = int(client_doc.get("deals", 0)) + 1
     client_doc["volume"] = round(float(client_doc.get("volume", 0.0)) + float(stats_amt), 4)
+    client_doc.setdefault("trades", []).append({"time": datetime.now(IST).isoformat(), "amount": float(stats_amt)})
     await set_doc(client_stats_col, client_uid, client_doc)
 
     client_name = client.name
@@ -1845,6 +1846,7 @@ async def mvouch(ctx, client: str = None, amount: str = None,
         client_doc = {"deals": 0, "volume": 0.0}
     client_doc["deals"] = int(client_doc.get("deals", 0)) + 1
     client_doc["volume"] = round(float(client_doc.get("volume", 0.0)) + float(stats_amt), 4)
+    client_doc.setdefault("trades", []).append({"time": datetime.now(IST).isoformat(), "amount": float(stats_amt)})                  
     await set_doc(client_stats_col, client_uid, client_doc)
 
     if ticket:
@@ -1960,9 +1962,10 @@ async def mmvouch(ctx, client: str = None, amount: str = None, mm_type: str = No
         client_uid = str(ticket_check["client"])
         client_doc = await get_doc(client_stats_col, client_uid)
         if client_doc is None:
-            client_doc = {"deals": 0, "volume": 0.0}
+            client_doc = {"deals": 0, "volume": 0.0, "trades": []}
         client_doc["deals"] = int(client_doc.get("deals", 0)) + 1
         client_doc["volume"] = round(float(client_doc.get("volume", 0.0)) + float(amt_clean), 4)
+        client_doc.setdefault("trades", []).append({"time": datetime.now(IST).isoformat(), "amount": float(amt_clean)})
         await set_doc(client_stats_col, client_uid, client_doc)
 
     cid    = str(ctx.channel.id)
@@ -2131,6 +2134,90 @@ async def leaderboard(ctx, size: str = "10"):
     embed.set_footer(text=f"Showing Top {size}")
     await ctx.send(embed=embed)
 
+class ClientLBView(discord.ui.View):
+    def __init__(self, sorted_clients, page=0):
+        super().__init__(timeout=180)
+        self.sorted_clients = sorted_clients
+        self.page = page
+        self.max_page = max((len(sorted_clients) - 1) // 10, 0)
+
+    def get_embed(self):
+        start = self.page * 10
+        page_clients = self.sorted_clients[start:start + 10]
+        medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+        desc = ""
+        for i, (uid, data) in enumerate(page_clients, start=start + 1):
+            vol = round(data.get("volume", 0.0), 2)
+            medal = medals.get(i, f"**#{i}**")
+            desc += f"{medal} <@{uid}> — `${vol:,.2f}`\n"
+        embed = discord.Embed(title="🏆 King Clients Leaderboard", color=0x5865f2,
+                              description=desc or "No client data yet.")
+        embed.set_footer(text=f"Page {self.page + 1}/{self.max_page + 1} • All-time totals")
+        return embed
+
+    @discord.ui.button(label="◀ Prev", style=discord.ButtonStyle.secondary, custom_id="clb_prev")
+    async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+        await interaction.response.edit_message(embed=self.get_embed(), view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary, custom_id="clb_next")
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page < self.max_page:
+            self.page += 1
+        await interaction.response.edit_message(embed=self.get_embed(), view=self)
+
+
+@bot.command(name="clb", aliases=["clientlb"])
+@check_staff()
+async def client_leaderboard(ctx):
+    all_c = await get_all(client_stats_col)
+    sorted_c = sorted(all_c.items(), key=lambda x: x[1].get("volume", 0.0), reverse=True)
+    if not sorted_c:
+        return await ctx.send("No client data yet.")
+    view = ClientLBView(sorted_c)
+    await ctx.send(embed=view.get_embed(), view=view)
+
+@bot.command(name="augtop")
+@check_staff()
+async def august_top_clients(ctx):
+    all_c = await get_all(client_stats_col)
+    start = IST.localize(datetime(2026, 8, 1, 0, 0, 0))
+    end   = IST.localize(datetime(2026, 9, 1, 0, 0, 0))
+
+    totals = {}
+    for uid, data in all_c.items():
+        vol = 0.0
+        for t in data.get("trades", []):
+            try:
+                t_time = datetime.fromisoformat(t["time"])
+                if t_time.tzinfo is None:
+                    t_time = IST.localize(t_time)
+                if start <= t_time < end:
+                    vol += t["amount"]
+            except Exception:
+                pass
+        if vol > 0:
+            totals[uid] = vol
+
+    sorted_c = sorted(totals.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    now = datetime.now(IST)
+    time_left = end - now
+    days = max(time_left.days, 0)
+    hours, rem = divmod(max(time_left.seconds, 0), 3600)
+    minutes = rem // 60
+
+    medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    desc = f"**Period:** Aug 1, 2026 → Sep 1, 2026\n⏳ **Time Left:** {days}d {hours}h {minutes}m\n" + "─" * 20 + "\n\n"
+    for i, (uid, vol) in enumerate(sorted_c, 1):
+        medal = medals.get(i, f"**#{i}**")
+        desc += f"{medal} <@{uid}> — `${vol:,.2f}` exchanged\n\n"
+
+    embed = discord.Embed(title="🏆 Monthly Exchange Event — Top Clients", color=0x2b2d31,
+                          description=desc or "No exchanges yet this month.")
+    embed.set_footer(text="King Exchange & MM • Live standings")
+    await ctx.send(embed=embed)
 # ═══════════════════════════════════════════════════════════════════════════════
 #  COMMANDS — TAX  (DISABLED)
 # ═══════════════════════════════════════════════════════════════════════════════
